@@ -147,6 +147,21 @@ class parameters:
                                     os.path.join(os.pardir,"Datasets/subject5/random3_r.csv"),
                                     os.path.join(os.pardir,"Datasets/subject5/random4_r.csv"),
                                     os.path.join(os.pardir,"Datasets/subject5/random5_r.csv")]]]
+        # 初始化空的 DataFrame
+        all_data = pd.DataFrame()
+
+        # 遍歷 self.list_of_exercises 並讀取每個檔案
+        for exercise_list in self.list_of_excersices:
+            for subject_files in exercise_list:
+                for file_path in subject_files:
+                    # 讀取每個 CSV 檔案並加入 all_data
+                    data = pd.read_csv(file_path)
+                    all_data = pd.concat([all_data, data], ignore_index=True)
+
+        # 查看合併後的資料
+        print(all_data.head())
+        print(all_data.info())
+        print(all_data.describe())
         self.randomseed = 42
         self.number_of_output = len(self.output)
         self.number_of_input = len(self.input)
@@ -208,10 +223,14 @@ def r2(actual, predicted):
 
 def preparedata(which, params, augmented = False, masked = False, scaled = False, noisy = False):
     all_data = pd.read_csv(which)
-    all_data = all_data.fillna(all_data.mean())
+    # 只對數值型列填補缺失值
+    numeric_cols = all_data.select_dtypes(include=['number']).columns
+    all_data[numeric_cols] = all_data[numeric_cols].fillna(all_data[numeric_cols].mean())
+    #all_data = all_data.fillna(0)
     labels = all_data[params.output]
     data = all_data[params.input]
 
+    #print("all data: ", all_data)
     if augmented == True:
         for k in range(params.minSelectedSensors, params.maxSelectedSensors):  # select number of sensors to be transformed
             selected = list(combinations(params.input, k + 1))
@@ -287,8 +306,9 @@ def preparedata(which, params, augmented = False, masked = False, scaled = False
                     total.append(noisy_dataset)
         data = total.copy()
 
-    data = data.values.astype(float)
+    data = data.values.astype(float) #convert values in data to float type
 
+    #將輸入數據投射到(-1,1)這個區間
     scaler_data = MinMaxScaler(feature_range=(-1, 1))
     data_normalized = scaler_data.fit_transform(data)
     data_normalized = torch.FloatTensor(data_normalized)
@@ -298,7 +318,7 @@ def preparedata(which, params, augmented = False, masked = False, scaled = False
     labels = torch.FloatTensor(labels_normalized)
 
     data_inout_seq = create_inout_sequences(
-        data_normalized, labels, params.train_window)
+        data_normalized, labels, params.train_window) #尚未確定意義
 
     return data_inout_seq
 
@@ -348,7 +368,7 @@ def train(data, model, device, params, optimizer, loss_function, valid, patience
 
             y_pred = model(seq.to(device))
 
-            y_pred = y_pred.view(1, -1)
+            y_pred = y_pred.view(1, -1) #將輸出結果攤平成像一維的樣子 ex. y_pred = [[1, 2, 3, 4, 5, 6, 7, 8, 9]]
 
             single_loss = loss_function(y_pred, labels.to(device))
             single_loss.backward()
@@ -441,11 +461,11 @@ class LSTM(nn.Module):
         self.drp = nn.Dropout(p=0.2)
 
         self.lstm = nn.LSTM(input_size, hidden_layer_size,
-                            num_layers=lstm_layer, bidirectional=True)
+                            num_layers=lstm_layer, bidirectional=True) #Bi-directional LSTM
 
-        self.linear1 = nn.Linear(2*hidden_layer_size, hidden_layer_size)
+        self.linear1 = nn.Linear(2*hidden_layer_size, hidden_layer_size) #FC Layer 1
 
-        self.linear2 = nn.Linear(hidden_layer_size, output_size)
+        self.linear2 = nn.Linear(hidden_layer_size, output_size) #FC Layer 2
 
         self.hidden_cell = (torch.zeros(2*self.params.lstm_layer, 1, self.hidden_layer_size),
                             torch.zeros(2*self.params.lstm_layer, 1, self.hidden_layer_size))
