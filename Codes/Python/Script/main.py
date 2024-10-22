@@ -10,6 +10,8 @@ if __name__ == '__main__':
         os.makedirs('Results')
     params = parameters()
     device = params.device
+    #df = pd.DataFrame(params.list_of_excersices)
+    #print("params.list_of_exercises: ",df)
     for randSeed in range(10): # runing 10 times with different seed values
         params.randomseed = randSeed
         RANDOM_SEED = params.randomseed
@@ -22,16 +24,18 @@ if __name__ == '__main__':
                 data_trial = []
                 for trialID in range(5):
                     data_trial.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params))
+                #print("hand: ", params.list_of_excersices[hand])
                 for trialID in range(5):
                     model = LSTM(input_size=params.number_of_input, hidden_layer_size=params.number_of_hidden_layer,
                                  output_size=params.number_of_output, lstm_layer=params.lstm_layer)
                     model = model.to(device)
-                    loss_function = nn.SmoothL1Loss(beta=0.5)
+                    loss_function = nn.SmoothL1Loss(beta=0.5) #一個兼具L1與L2 loss function 優勢的版本
                     optimizer = torch.optim.Adam(model.parameters(), lr=params.learning_rate)
 
                     RMSE_list = []
                     R2_list = []
-                    init_flag = 0
+                    init_flag = 0 #標記訓練集還未放入資料
+                    #把一組資料獨立出來做為validation set，剩下4組資料做為training data, trialID是指被拿來當validation的那組
                     for trainingID in range(5):
                         if trainingID != trialID:
                             if init_flag == 0:
@@ -39,6 +43,8 @@ if __name__ == '__main__':
                                 init_flag = 1
                             else:
                                 training_data = np.concatenate((training_data, data_trial[trainingID]), axis=0)
+                    ######################
+
                     print("Training intra-subject CV model_" + str(trialID) + "_subject_" + str(subjectID) + "_hand_" + str(
                         hand)+ "_randSeed_" + str(randSeed))
                     model = train(training_data, model, device, params, optimizer, loss_function, data_trial[trialID],
@@ -53,7 +59,7 @@ if __name__ == '__main__':
                     RMSE_list.append(rmse(actual, predicted))
                     R2_list.append(r2(actual, predicted))
 
-                    # resutls
+                    # results
                     df_r2 = pd.DataFrame(R2_list)
                     df_r2.to_csv("Results/r2_intra_subject" + str(subjectID) + "_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
                     df_r2.describe().to_csv(
