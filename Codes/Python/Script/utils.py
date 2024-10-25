@@ -159,9 +159,6 @@ class parameters:
                     all_data = pd.concat([all_data, data], ignore_index=True)
 
         # 查看合併後的資料
-        print(all_data.head())
-        print(all_data.info())
-        print(all_data.describe())
         self.randomseed = 42
         self.number_of_output = len(self.output)
         self.number_of_input = len(self.input)
