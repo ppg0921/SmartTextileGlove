@@ -331,7 +331,7 @@ def plot(actual, predicted, params, type, name):
             p.set(xlabel='Actual',
                   ylabel='Predicted')
             plt.savefig(name + "_" + params.output[i] + "_" + type + ".pdf")
-            plt.show(block=False)
+            #plt.show(block=False)
     if type == 'time':
         for i in range(params.number_of_output):
 
@@ -341,7 +341,7 @@ def plot(actual, predicted, params, type, name):
             fig.legend(labels=['Actual', 'Predicted'])
             plt.title(params.output[i])
             plt.savefig(name+"_"+params.output[i]+"_"+type+".pdf")
-            plt.show(block=False)
+            #plt.show(block=False)
     
 
 
