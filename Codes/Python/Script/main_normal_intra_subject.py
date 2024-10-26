@@ -79,7 +79,7 @@ if __name__ == '__main__':
 
                     print("Current R2: ", current_r2)
                     if current_r2[-1] > best_r2:
-                        best_r2 = current_r2
+                        best_r2 = current_r2[-1]
                         best_model = model
                         best_model_info = f"model_{trialID}_subject_{subjectID}_hand_{hand}_randSeed_{randSeed}"
                         print("Current Best Model: ",best_model_info)
