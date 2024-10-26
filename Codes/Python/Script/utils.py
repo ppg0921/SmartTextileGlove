@@ -97,6 +97,7 @@ class parameters:
                       'IMU1', 'IMU2', 'IMU3', 'IMU4']
         self.outputnames = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        print(self.device)
         self.list_of_excersices = [[[os.path.join(os.pardir,"Datasets/subject1/random1_l.csv"),
                                     os.path.join(os.pardir,"Datasets/subject1/random2_l.csv"),
                                     os.path.join(os.pardir,"Datasets/subject1/random3_l.csv"),
