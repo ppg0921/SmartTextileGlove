@@ -29,6 +29,8 @@ if __name__ == '__main__':
                 data_trial_masked = []
                 data_trial_scaled = []
                 data_trial_noisy = []
+                data_trial = 0
+                data_validation = 0
 
                 print("Loading datasets")
 
@@ -36,24 +38,52 @@ if __name__ == '__main__':
                 for subjectID in range(5):
                     for trialID in range(5):# 5個subject各拿5次trial的資料來放入user_data
                         if trialID == 0:
-                            data_trial = preparedata(params.list_of_excersices[hand][subjectID][trialID], params)
+                            if subjectID == 0:
+                                data_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params)
+                            else:
+                                data_trial = preparedata(params.list_of_excersices[hand][subjectID][trialID], params)
                         else:
-                            data_trial = np.concatenate(
-                                (data_trial, preparedata(params.list_of_excersices[hand][subjectID][trialID], params)), axis=0)
-                    user_data.append(data_trial)
-                for trialID in range(2): #dataset0當訓練集;dataset1當testing set
-                    print("Trial"+str(trialID))
-                    print("Normal data")
-                    data_trial_normal.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params))
-                    print("Augmented data")
-                    data_trial_augmented.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, augmented = True))
-                    print("Masked data")
-                    data_trial_masked.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, masked = True))
-                    print("Scaled data")
-                    data_trial_scaled.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, scaled = True))
-                    print("Noisy data")
-                    data_trial_noisy.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, noisy=True))
-
+                            if subjectID == 0:
+                                data_validation = np.concatenate(
+                                    (data_validation, preparedata(params.list_of_excersices[hand][subjectID][trialID], params)), axis=0)
+                            else:
+                                data_trial = np.concatenate(
+                                    (data_trial, preparedata(params.list_of_excersices[hand][subjectID][trialID], params)), axis=0)
+                    user_data.append(data_trial) #後面好像沒用到
+                
+                    for trialID in range(5): #subject 0當validation set; subject 1-4當testing set
+                        print("Subject "+str(subjectID)+ ",Trial "+str(trialID))
+                        if subjectID == 0:
+                            print("normal data")
+                            data_trial_normal_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params)
+                            print("augmented data")
+                            data_trial_augmented_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params, augmented = True)
+                            print("masked data")
+                            data_trial_masked_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params, masked = True)
+                            print("scaled data")
+                            data_trial_scaled_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params, scaled = True)
+                            print("noisy data")
+                            data_trial_noisy_validation = preparedata(params.list_of_excersices[hand][subjectID][trialID], params, noisy = True)
+                        else: 
+                            if trialID == 0 and subjectID == 1:
+                                data_trial_normal = preparedata(params.list_of_excersices[hand][subjectID][trialID], params)
+                                data_trial_augmented = preparedata(params.list_of_excersices[hand][subjectID][trialID], params, augmented = True)
+                            else:
+                                data_trial_normal = np.concatenate((data_trial_normal, preparedata(params.list_of_excersices[hand][subjectID][trialID], params)), axis=0)
+                                data_trial_augmented = np.concatenate((data_trial_augmented, preparedata(params.list_of_excersices[hand][subjectID][trialID], params, augmented = True)), axis=0)
+                        
+                        # mask, scale, noise 其實只用到validation
+                        # print("Normal data")
+                        # data_trial_normal.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params))
+                        # print("Augmented data")
+                        # data_trial_augmented.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, augmented = True))
+                        # print("Masked data")
+                        # data_trial_masked.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, masked = True))
+                        # print("Scaled data")
+                        # data_trial_scaled.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, scaled = True))
+                        # print("Noisy data")
+                        # data_trial_noisy.append(preparedata(params.list_of_excersices[hand][subjectID][trialID], params, noisy=True))
+                
 
                 model_augmented = LSTM(input_size=params.number_of_input, hidden_layer_size=params.number_of_hidden_layer, output_size=params.number_of_output, lstm_layer=params.lstm_layer)
                 model_augmented = model_augmented.to(device)
@@ -62,47 +92,47 @@ if __name__ == '__main__':
                 optimizer_augmented = torch.optim.Adam(model_augmented.parameters(), lr=params.learning_rate)
 
                 print("Training augmented model")
-                model_augmented = train(data_trial_augmented[0], model_augmented, device, params, optimizer_augmented, loss_function_augmented, data_trial_augmented[1], params.patience)
+                model_augmented = train(data_trial_augmented, model_augmented, device, params, optimizer_augmented, loss_function_augmented, data_trial_augmented_validation, params.patience)
 
                 print("Fine-tuning augmented model on normal dataset")
-                model_augmented = train(data_trial_normal[0], model_augmented, device, params, optimizer_augmented, loss_function_augmented, data_trial_augmented[1], params.patience)
+                model_augmented = train(data_trial_normal, model_augmented, device, params, optimizer_augmented, loss_function_augmented, data_trial_augmented_validation, params.patience)
                 
                 R2_normal = []
                 RMSE_normal = []
 
                 #evaluate normal model
-                actual, predicted = eval(data_trial_normal[1], model_normal, device, "normal_model_normal_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
-                RMSE_normal.append(rmse(actual, predicted))
-                R2_normal.append(r2(actual, predicted))
+                # actual, predicted = eval(data_trial_normal[1], model_normal, device, "normal_model_normal_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                # RMSE_normal.append(rmse(actual, predicted))
+                # R2_normal.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_masked[1], model_normal, device, "normal_model_masked_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
-                RMSE_normal.append(rmse(actual, predicted))
-                R2_normal.append(r2(actual, predicted))
+                # actual, predicted = eval(data_trial_masked[1], model_normal, device, "normal_model_masked_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                # RMSE_normal.append(rmse(actual, predicted))
+                # R2_normal.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_scaled[1], model_normal, device, "normal_model_scaled_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
-                RMSE_normal.append(rmse(actual, predicted))
-                R2_normal.append(r2(actual, predicted))
+                # actual, predicted = eval(data_trial_scaled[1], model_normal, device, "normal_model_scaled_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                # RMSE_normal.append(rmse(actual, predicted))
+                # R2_normal.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_noisy[1], model_normal, device, "normal_model_noisy_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
-                RMSE_normal.append(rmse(actual, predicted))
-                R2_normal.append(r2(actual, predicted))
+                # actual, predicted = eval(data_trial_noisy[1], model_normal, device, "normal_model_noisy_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                # RMSE_normal.append(rmse(actual, predicted))
+                # R2_normal.append(r2(actual, predicted))
 
                 R2_augmented = []
                 RMSE_augmented = []
                 # evaluate augmented model
-                actual, predicted = eval(data_trial_normal[1], model_augmented, device, "augmented_model_normal_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                actual, predicted = eval(data_trial_normal_validation, model_augmented, device, "augmented_model_normal_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
                 RMSE_augmented.append(rmse(actual, predicted))
                 R2_augmented.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_masked[1], model_augmented, device, "augmented_model_masked_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                actual, predicted = eval(data_trial_masked_validation, model_augmented, device, "augmented_model_masked_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
                 RMSE_augmented.append(rmse(actual, predicted))
                 R2_augmented.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_scaled[1], model_augmented, device, "augmented_model_scaled_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                actual, predicted = eval(data_trial_scaled_validation, model_augmented, device, "augmented_model_scaled_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
                 RMSE_augmented.append(rmse(actual, predicted))
                 R2_augmented.append(r2(actual, predicted))
 
-                actual, predicted = eval(data_trial_noisy[1], model_augmented, device, "augmented_model_noisy_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
+                actual, predicted = eval(data_trial_noisy_validation, model_augmented, device, "augmented_model_noisy_data_subject"+str(subjectID)+"_hand_"+str(hand)+"_seed_"+str(randSeed))
                 RMSE_augmented.append(rmse(actual, predicted))
                 R2_augmented.append(r2(actual, predicted))
 
