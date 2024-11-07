@@ -6,8 +6,8 @@ import numpy as np
 import os
 
 if __name__ == '__main__':
-    if not os.path.exists('Results_new_1026AM'):
-        os.makedirs('Results_new_1026AM')
+    if not os.path.exists('Results'):
+        os.makedirs('Results')
 
     if not os.path.exists('Trained_Models/normal_inter'):
         os.makedirs('Trained_Models/normal_inter') 
@@ -59,8 +59,8 @@ if __name__ == '__main__':
                 actual, predicted = eval(user_data[subjectID], model, device,
                                          "inter-subject CV model_" + "subject_" + str(subjectID) + "_hand_" + str(hand)+ "_randSeed_" + str(randSeed))
                 if params.plot == True:
-                    plot(actual, predicted, params, 'scatter', "Results_new_1026AM/Subject" + str(subjectID) + "_hand_" + str(hand)+ "_randSeed_" + str(randSeed))
-                    plot(actual, predicted, params, 'time', "Results_new_1026AM/Subject" + str(subjectID) + "_hand_" + str(hand)+ "_randSeed_" + str(randSeed))
+                    plot(actual, predicted, params, 'scatter', "Results/Subject" + str(subjectID) + "_hand_" + str(hand)+ "_randSeed_" + str(randSeed))
+                    plot(actual, predicted, params, 'time', "Results/Subject" + str(subjectID) + "_hand_" + str(hand)+ "_randSeed_" + str(randSeed))
                 
                 
                 current_rmse = rmse(actual, predicted)
@@ -70,19 +70,19 @@ if __name__ == '__main__':
 
                 # Saving inter-subject cross validation resutls
                 df_r2 = pd.DataFrame(R2_list)
-                df_r2.to_csv("Results_new_1026AM/r2_inter_subject_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
-                df_r2.describe().to_csv("Results_new_1026AM/r2_inter_subject_summary_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
+                df_r2.to_csv("Results/r2_inter_subject_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
+                df_r2.describe().to_csv("Results/r2_inter_subject_summary_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
 
                 df_rmse = pd.DataFrame(RMSE_list)
-                df_rmse.to_csv("Results_new_1026AM/rmse_inter_subject_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
-                df_rmse.describe().to_csv("Results_new_1026AM/rmse_inter_subject_summary_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
+                df_rmse.to_csv("Results/rmse_inter_subject_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
+                df_rmse.describe().to_csv("Results/rmse_inter_subject_summary_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
                 
-                if current_r2[-1] > best_r2:
-                    best_r2 = current_r2[-1]
+                if current_r2 > best_r2:
+                    best_r2 = current_r2
                     best_model = model
-                    best_model_info = f"model_inter_subject_{subjectID}_as_valid_hand_{hand}_randSeed_{randSeed}_R2_{best_r2}"
+                    best_model_info = f"model_inter_subject_{subjectID}_as_valid_hand_{hand}_randSeed_{randSeed}"
 
-                if best_model is not None:
-                    # 儲存整個模型
-                    torch.save(best_model, f"Trained_Models/normal_inter/best_model_{best_model_info}.pth")
-                    print(f"Best model saved as Trained_Models/normal_inter/best_model_{best_model_info}.pth with R2: {best_r2}")
+    if best_model is not None:
+        # 儲存整個模型
+        torch.save(best_model, f"Trained_Models/normal_inter/best_model_{best_model_info}.pth")
+        print(f"Best model saved as Trained_Models/normal_inter/best_model_{best_model_info}.pth with R2: {best_r2}")

@@ -77,12 +77,10 @@ if __name__ == '__main__':
                     df_rmse.describe().to_csv(
                         "Results/rmse_intra_subject" + str(subjectID) + "_summary_hand_" + str(hand) + "_randSeed_" + str(randSeed) + ".csv")
 
-                    print("Current R2: ", current_r2)
-                    if current_r2[-1] > best_r2:
-                        best_r2 = current_r2[-1]
+                    if current_r2 > best_r2:
+                        best_r2 = current_r2
                         best_model = model
                         best_model_info = f"model_{trialID}_subject_{subjectID}_hand_{hand}_randSeed_{randSeed}"
-                        print("Current Best Model: ",best_model_info)
 
     if best_model is not None:
         # 儲存整個模型

@@ -97,7 +97,6 @@ class parameters:
                       'IMU1', 'IMU2', 'IMU3', 'IMU4']
         self.outputnames = []
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        print(self.device)
         self.list_of_excersices = [[[os.path.join(os.pardir,"Datasets/subject1/random1_l.csv"),
                                     os.path.join(os.pardir,"Datasets/subject1/random2_l.csv"),
                                     os.path.join(os.pardir,"Datasets/subject1/random3_l.csv"),
@@ -329,7 +328,7 @@ def plot(actual, predicted, params, type, name):
             p.set(xlabel='Actual',
                   ylabel='Predicted')
             plt.savefig(name + "_" + params.output[i] + "_" + type + ".pdf")
-            #plt.show(block=False)
+            plt.show(block=False)
     if type == 'time':
         for i in range(params.number_of_output):
 
@@ -339,7 +338,7 @@ def plot(actual, predicted, params, type, name):
             fig.legend(labels=['Actual', 'Predicted'])
             plt.title(params.output[i])
             plt.savefig(name+"_"+params.output[i]+"_"+type+".pdf")
-            #plt.show(block=False)
+            plt.show(block=False)
     
 
 
@@ -463,7 +462,11 @@ class LSTM(nn.Module):
 
         self.linear1 = nn.Linear(2*hidden_layer_size, hidden_layer_size) #FC Layer 1
 
+        self.sigmoid1 = nn.Sigmoid()  # Sigmoid Layer 1
+
         self.linear2 = nn.Linear(hidden_layer_size, output_size) #FC Layer 2
+
+        self.sigmoid2 = nn.Sigmoid()  # Sigmoid Layer 2
 
         self.hidden_cell = (torch.zeros(2*self.params.lstm_layer, 1, self.hidden_layer_size),
                             torch.zeros(2*self.params.lstm_layer, 1, self.hidden_layer_size))
@@ -474,5 +477,7 @@ class LSTM(nn.Module):
             dropout.view(len(input_seq), 1, -1), self.hidden_cell)
         out = self.drp(lstm_out)
         buffer = self.linear1(out.view(len(input_seq), -1))
-        predictions = self.linear2(buffer)
+        buffer = self.sigmoid1(buffer)
+        buffer = self.linear2(buffer)
+        predictions = self.sigmoid2(buffer)
         return predictions[-1]
